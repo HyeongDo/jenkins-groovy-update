@@ -7,7 +7,7 @@ class Builder {
 
     def run(Map config) {
         // Checkout first
-        def checkoutInfo = new Checkout(steps).run(config)
+        def checkoutInfo = new ci.Checkout(steps).run(config)
 
         def repo     = checkoutInfo.repo
         def branch   = checkoutInfo.branch
