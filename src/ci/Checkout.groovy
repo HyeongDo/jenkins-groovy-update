@@ -22,7 +22,7 @@ class Checkout {
                 trackingSubmodules: true
             )],
             userRemoteConfigs: [[
-                credentialsId: 'project-bitbucket',
+                credentialsId: 'jenkins-test',
                 url: "https://bitbucket.org/okestrolab/${repo}.git"
             ]]
         ])
