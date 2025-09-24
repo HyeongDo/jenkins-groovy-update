@@ -4,7 +4,7 @@ class BuildDetector {
     def steps
     BuildDetector(steps) { this.steps = steps }
 
-    enum CIDecision {
+    statuc enum CIDecision {
         CI_REQUIRED,
         BUILT_IN,
         NONE
