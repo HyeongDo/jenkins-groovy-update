@@ -1,6 +1,5 @@
 package ci
 
-import ci.BuildDetector.CIDecision
 
 class Builder {
     def steps
