@@ -9,26 +9,16 @@ class Stages {
     static def build(steps, Map config) {
         steps.stage("Build") {
             def buildDetector = new BuildDetector(steps)
-            def workdir        = config.workdir ?: '.'
-            def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
-            if (!dockerfilePath) {
-                dockerfilePath = steps.sh(
-                    script: "find ${workdir} -type f -iname 'Dockerfile' | head -n 1",
-                    returnStdout: true
-                ).trim()
-                if (!dockerfilePath) {
-                    steps.error "Dockerfile not found in ${workdir} or subdirectories"
-                }
-            }
-            def ciDecision = buildDetector.detectBuild(dockerfilePath)
-            def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
+            def ciDecision = buildDetector.detectBuild(config.dockerfilePath)
+            def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(config.dockerfilePath)
 
             config.ciDecision = ciDecision
             config.buildMode  = buildMode
 
             if (ciDecision == CIDecision.CI_REQUIRED) {
                 steps.echo "Running external build: ${buildMode}"
+                def workdir = config.workdir ?: '.'
                 if (buildMode == "gradle") {
                     steps.sh "cd ${workdir} && ./gradlew clean build -x test"
                 } else if (buildMode == "maven") {
