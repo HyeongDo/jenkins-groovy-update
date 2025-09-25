@@ -31,6 +31,18 @@ class Checkout {
             ]]
         ])
 
+        // Dockerfile path 탐색
+        def workdir = config.workdir ?: '.'
+        def dockerfilePath = steps.sh(
+            script: "find ${workdir} -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
+            returnStdout: true
+        ).trim()
+        if (!dockerfilePath) {
+            steps.error "Dockerfile not found in ${workdir} or subdirectories"
+        }
+        config.dockerfilePath = dockerfilePath   // 🔥 확정 저장
+
+
         // Commit info with fallback
         def fullCommitId = scmInfo.GIT_COMMIT ?: steps.sh(
             returnStdout: true,
