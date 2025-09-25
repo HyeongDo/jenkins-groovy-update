@@ -15,12 +15,16 @@ class Checkout {
         def scmInfo = steps.checkout([
             $class: 'GitSCM',
             branches: [[name: branch]],
-            extensions: [steps.submodule(
-                parentCredentials: true,
-                reference: '',
-                recursiveSubmodules: true,
-                trackingSubmodules: true
-            )],
+            extensions: [
+                steps.submodule(
+                    parentCredentials: true,
+                    reference: '',
+                    recursiveSubmodules: true,
+                    trackingSubmodules: true
+                ),
+                [$class: 'WipeWorkspace'],          // 워크스페이스 강제 삭제
+                [$class: 'CleanBeforeCheckout']     // 체크아웃 전 git clean 실행
+            ],
             userRemoteConfigs: [[
                 credentialsId: 'jenkins-test',
                 url: "https://bitbucket.org/okestrolab/${repo}.git"
