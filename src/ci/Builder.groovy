@@ -1,5 +1,5 @@
 package ci
-
+import ci.CIDecision
 
 class Builder {
     def steps
@@ -21,7 +21,7 @@ class Builder {
         def buildMode     = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
 
         switch (ciDecision) {
-            case buildDetector.CIDecision.CI_REQUIRED:
+            case CIDecision.CI_REQUIRED:
                 steps.echo "[Builder] External CI build required, mode=${buildMode}"
                 if (buildMode == "gradle") {
                     steps.sh "cd ${workdir} && ./gradlew clean build -x test"
@@ -33,10 +33,10 @@ class Builder {
                     steps.sh "cd ${workdir} && yarn install && yarn build"
                 }
                 break
-            case buildDetector.CIDecision.BUILT_IN:
+            case CIDecision.BUILT_IN:
                 steps.echo "[Builder] Build handled inside Dockerfile → skip external build"
                 break
-            case buildDetector.CIDecision.NONE:
+            case CIDecision.NONE:
                 steps.echo "[Builder] No build needed"
                 break
         }

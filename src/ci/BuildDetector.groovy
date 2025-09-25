@@ -1,35 +1,31 @@
 package ci
+import ci.CIDecision
 
 class BuildDetector {
     def steps
     BuildDetector(steps) { this.steps = steps }
 
-    static enum CIDecision {
-        CI_REQUIRED,
-        BUILT_IN,
-        NONE
-    }
 
     CIDecision detectBuild(String dockerfilePath) {
         def dockerfile = steps.readFile(dockerfilePath)
 
         if (dockerfile =~ /(?i)FROM .* AS builder/) {
             steps.echo "[BuildDetector] Detected multi-stage build → BUILT_IN"
-            return BuildDetector.CIDecision.BUILT_IN
+            return CIDecision.BUILT_IN
         }
 
         if (dockerfile.contains("COPY /build/libs/") || dockerfile.contains(".jar")) {
             steps.echo "[BuildDetector] Detected artifact COPY → CI_REQUIRED"
-            return BuildDetector.CIDecision.CI_REQUIRED
+            return CIDecision.CI_REQUIRED
         }
 
         if (dockerfile =~ /mvn|gradle|go build|yarn build|npm run build/) {
             steps.echo "[BuildDetector] Build command inside Dockerfile → BUILT_IN"
-            return BuildDetector.CIDecision.BUILT_IN
+            return CIDecision.BUILT_IN
         }
 
         steps.echo "[BuildDetector] No indicators → NONE"
-        return BuildDetector.CIDecision.NONE
+        return CIDecision.NONE
     }
 
     boolean requiresSshKey(String dockerfilePath) {
