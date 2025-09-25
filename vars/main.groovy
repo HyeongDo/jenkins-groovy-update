@@ -1,5 +1,29 @@
-import ci.Builder
+import ci.Stages
 
 def call(Map config) {
-    new Builder(this).run(config)
+    pipeline {
+        agent any
+        stages {
+            stage('Checkout') {
+                steps {
+                    script { Stages.checkout(this, config) }
+                }
+            }
+            stage('Build') {
+                steps {
+                    script { Stages.build(this, config) }
+                }
+            }
+            stage('Image Build') {
+                steps {
+                    script { Stages.imageBuild(this, config) }
+                }
+            }
+            stage('SSH Key Injection') {
+                steps {
+                    script { Stages.sshKey(this, config) }
+                }
+            }
+        }
+    }
 }
