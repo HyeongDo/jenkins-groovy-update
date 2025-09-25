@@ -2,7 +2,12 @@ import ci.Stages
 
 def call(Map config) {
     pipeline {
-        agent any
+        agent {
+            docker {
+                image 'docker:24.0.7-dind'
+                args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
         stages {
             stage('Checkout') {
                 steps {
