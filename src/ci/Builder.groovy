@@ -16,6 +16,17 @@ class Builder {
         def workdir        = config.workdir ?: '.'
         def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
+        
+        if (!dockerfilePath) {
+            dockerfilePath = steps.sh(
+                script: "find ${workdir} -type f -iname 'Dockerfile' | head -n 1",
+                returnStdout: true
+            ).trim()
+            if (!dockerfilePath) {
+                steps.error "Dockerfile not found in ${workdir} or subdirectories"
+            }
+        }
+
         def buildDetector = new BuildDetector(steps)
         def ciDecision    = buildDetector.detectBuild(dockerfilePath)
         def buildMode     = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)

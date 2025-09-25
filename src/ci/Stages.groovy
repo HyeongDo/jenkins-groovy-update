@@ -9,35 +9,25 @@ class Stages {
     static def build(steps, Map config) {
         steps.stage("Build") {
             def buildDetector = new BuildDetector(steps)
-            def workdir        = config.workdir ?: '.'
-            def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+            // def workdir        = config.workdir ?: '.'
+            // def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
-            def ciDecision = buildDetector.detectBuild(dockerfilePath)
-            def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
+            def ciDecision = buildDetector.detectBuild(config.dockerfilePath)
+            def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(config.dockerfilePath)
 
             config.ciDecision = ciDecision
             config.buildMode  = buildMode
 
-            if (!dockerfilePath) {
-                dockerfilePath = steps.sh(
-                    script: "find ${workdir} -type f -iname 'Dockerfile' | head -n 1",
-                    returnStdout: true
-                ).trim()
-                if (!dockerfilePath) {
-                    steps.error "Dockerfile not found in ${workdir} or subdirectories"
-                }
-            }
-
             if (ciDecision == CIDecision.CI_REQUIRED) {
                 steps.echo "Running external build: ${buildMode}"
                 if (buildMode == "gradle") {
-                    steps.sh "cd ${workdir} && ./gradlew clean build -x test"
+                    steps.sh "cd ${config.workdir} && ./gradlew clean build -x test"
                 } else if (buildMode == "maven") {
-                    steps.sh "cd ${workdir} && mvn clean package -Dmaven.test.skip=true"
+                    steps.sh "cd ${config.workdir} && mvn clean package -Dmaven.test.skip=true"
                 } else if (buildMode == "go") {
-                    steps.sh "cd ${workdir} && go build ./..."
+                    steps.sh "cd ${config.  workdir} && go build ./..."
                 } else if (buildMode == "front") {
-                    steps.sh "cd ${workdir} && yarn install && yarn build"
+                    steps.sh "cd ${config.workdir} && yarn install && yarn build"
                 }
             } else {
                 steps.echo "Build skipped (ciDecision=${ciDecision})"
