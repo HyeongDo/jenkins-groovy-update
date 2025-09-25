@@ -15,21 +15,21 @@ class BuildDetector {
 
         if (dockerfile =~ /(?i)FROM .* AS builder/) {
             steps.echo "[BuildDetector] Detected multi-stage build → BUILT_IN"
-            return CIDecision.BUILT_IN
+            return BuildDetector.CIDecision.BUILT_IN
         }
 
         if (dockerfile.contains("COPY /build/libs/") || dockerfile.contains(".jar")) {
             steps.echo "[BuildDetector] Detected artifact COPY → CI_REQUIRED"
-            return CIDecision.CI_REQUIRED
+            return BuildDetector.CIDecision.CI_REQUIRED
         }
 
         if (dockerfile =~ /mvn|gradle|go build|yarn build|npm run build/) {
             steps.echo "[BuildDetector] Build command inside Dockerfile → BUILT_IN"
-            return CIDecision.BUILT_IN
+            return BuildDetector.CIDecision.BUILT_IN
         }
 
         steps.echo "[BuildDetector] No indicators → NONE"
-        return CIDecision.NONE
+        return BuildDetector.CIDecision.NONE
     }
 
     boolean requiresSshKey(String dockerfilePath) {
