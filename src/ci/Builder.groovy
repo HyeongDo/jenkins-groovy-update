@@ -14,18 +14,21 @@ class Builder {
         def pushImage= checkoutInfo.pushImage
 
         def workdir        = config.workdir ?: '.'
-        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
-        
-        if (!dockerfilePath) {
+        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+        if (!steps.fileExists(dockerfilePath)) {
             dockerfilePath = steps.sh(
-                script: "find ${workdir} -type f -iname 'Dockerfile' | head -n 1",
+                script: "find ${workdir} -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
                 returnStdout: true
             ).trim()
             if (!dockerfilePath) {
-                steps.error "Dockerfile not found in ${workdir} or subdirectories"
+                steps.error "Dockerfile not found in ${workdir} or its subdirectories"
             }
         }
+
+
+        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+
 
         def buildDetector = new BuildDetector(steps)
         def ciDecision    = buildDetector.detectBuild(dockerfilePath)

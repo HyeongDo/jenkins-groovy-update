@@ -9,6 +9,11 @@ class BuildDetector {
     CIDecision detectBuild(String dockerfilePath) {
         def dockerfile = steps.readFile(dockerfilePath)
 
+        if (!steps.fileExists(dockerfilePath)) {
+            steps.error "[BuildDetector] Dockerfile not found at ${dockerfilePath}"
+        }
+        def dockerfile = steps.readFile(file: dockerfilePath, encoding: "UTF-8")
+
         if (dockerfile =~ /(?i)FROM .* AS builder/) {
             steps.echo "[BuildDetector] Detected multi-stage build → BUILT_IN"
             return CIDecision.BUILT_IN
