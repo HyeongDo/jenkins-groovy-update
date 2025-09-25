@@ -48,6 +48,12 @@ class BuildDetector {
         if (dockerfile =~ /go build/) return "go"
         if (dockerfile =~ /yarn build|npm run build/) return "front"
 
+        // JAR 배포 패턴 추정
+        if (dockerfile =~ /target\/.*\.jar/ || dockerfile.contains(".jar")) return "maven"
+        // Gradle 배포 패턴
+        if (dockerfile =~ /build\/libs\/.*\.jar/) return "gradle"
+
+
         return "unknown"
     }
 }
