@@ -7,27 +7,41 @@ class Stages {
     }
 
     static def build(steps, Map config) {
-        def buildDetector = new BuildDetector(steps)
-        def dockerfilePath = config.dockerfilePath ?: "${config.workdir ?: '.'}/Dockerfile"
-        def ciDecision = buildDetector.detectBuild(dockerfilePath)
-        def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
+        steps.stage("Build") {
+            def buildDetector = new BuildDetector(steps)
+            def workdir        = config.workdir ?: '.'
+            def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
-        config.ciDecision = ciDecision
-        config.buildMode  = buildMode
+            def ciDecision = buildDetector.detectBuild(dockerfilePath)
+            def buildMode  = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
 
-        if (ciDecision == CIDecision.CI_REQUIRED) {
-            steps.echo "[Stage:Build] Running external build: ${buildMode}"
-            if (buildMode == "gradle") {
-                steps.sh "cd ${config.workdir ?: '.'} && ./gradlew clean build -x test"
-            } else if (buildMode == "maven") {
-                steps.sh "cd ${config.workdir ?: '.'} && mvn clean package -Dmaven.test.skip=true"
-            } else if (buildMode == "go") {
-                steps.sh "cd ${config.workdir ?: '.'} && go build ./..."
-            } else if (buildMode == "front") {
-                steps.sh "cd ${config.workdir ?: '.'} && yarn install && yarn build"
+            config.ciDecision = ciDecision
+            config.buildMode  = buildMode
+
+            if (!dockerfilePath) {
+                dockerfilePath = steps.sh(
+                    script: "find ${workdir} -type f -iname 'Dockerfile' | head -n 1",
+                    returnStdout: true
+                ).trim()
+                if (!dockerfilePath) {
+                    steps.error "Dockerfile not found in ${workdir} or subdirectories"
+                }
             }
-        } else {
-            steps.echo "[Stage:Build] Skipped (ciDecision=${ciDecision})"
+
+            if (ciDecision == CIDecision.CI_REQUIRED) {
+                steps.echo "Running external build: ${buildMode}"
+                if (buildMode == "gradle") {
+                    steps.sh "cd ${workdir} && ./gradlew clean build -x test"
+                } else if (buildMode == "maven") {
+                    steps.sh "cd ${workdir} && mvn clean package -Dmaven.test.skip=true"
+                } else if (buildMode == "go") {
+                    steps.sh "cd ${workdir} && go build ./..."
+                } else if (buildMode == "front") {
+                    steps.sh "cd ${workdir} && yarn install && yarn build"
+                }
+            } else {
+                steps.echo "Build skipped (ciDecision=${ciDecision})"
+            }
         }
     }
 
