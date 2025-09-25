@@ -15,7 +15,8 @@ class Builder {
 
         def workdir        = config.workdir ?: '.'
 
-        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+        // def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+        def dockerfilePath = config.dockerfilePath
         if (!steps.fileExists(dockerfilePath)) {
             dockerfilePath = steps.sh(
                 script: "find ${workdir} -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
@@ -27,7 +28,7 @@ class Builder {
         }
 
 
-        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+        // def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
 
 
         def buildDetector = new BuildDetector(steps)

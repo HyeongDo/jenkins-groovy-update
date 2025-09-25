@@ -7,7 +7,7 @@ class BuildDetector {
 
 
     CIDecision detectBuild(String dockerfilePath) {
-        def dockerfile = steps.readFile(dockerfilePath)
+        // def dockerfile = steps.readFile(dockerfilePath)
 
         if (!steps.fileExists(dockerfilePath)) {
             steps.error "[BuildDetector] Dockerfile not found at ${dockerfilePath}"
