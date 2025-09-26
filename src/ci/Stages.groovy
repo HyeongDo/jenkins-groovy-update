@@ -30,7 +30,8 @@ class Stages {
                 steps.sh "cd ${workdir} && ./gradlew clean build -x test"
             } else if (buildMode == "front") {
                 steps.echo "[Stage:Build] Running Frontend build"
-                steps.sh "cd ${workdir} && yarn install && yarn build"
+                steps.echo "Build Mode: ${buildMode}, Skip."
+                // steps.sh "cd ${workdir} && yarn install && yarn build"
             } else if (buildMode == "go") {
                 steps.echo "[Stage:Build] Running Go build"
                 steps.sh "cd ${workdir} && go build ./..."
