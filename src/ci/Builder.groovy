@@ -41,7 +41,7 @@ class Builder {
                 --build-arg BUILD_ENV=${branch} \
                 ${sshArgs} \
                 -t ${pushImage} \
-                -f $(basename ${dockerfilePath}) .
+                -f \$(basename ${dockerfilePath}) .
             docker push ${pushImage}
         """.stripIndent()
     }
