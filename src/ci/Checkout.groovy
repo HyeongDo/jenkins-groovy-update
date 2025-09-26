@@ -22,8 +22,8 @@ class Checkout {
                     recursiveSubmodules: true,
                     trackingSubmodules: true
                 ),
-                [$class: 'WipeWorkspace'],          // 워크스페이스 강제 삭제
-                [$class: 'CleanBeforeCheckout']     // 체크아웃 전 git clean 실행
+                [$class: 'WipeWorkspace'],
+                [$class: 'CleanBeforeCheckout']
             ],
             userRemoteConfigs: [[
                 credentialsId: 'jenkins-test',
@@ -31,19 +31,37 @@ class Checkout {
             ]]
         ])
 
-        // Dockerfile path 탐색
-        def workdir = config.workdir ?: '.'
+        // Dockerfile 탐색
         def dockerfilePath = steps.sh(
-            script: "find ${workdir} -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
+            script: "find . -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
             returnStdout: true
         ).trim()
         if (!dockerfilePath) {
-            steps.error "Dockerfile not found in ${workdir} or subdirectories"
+            steps.error "Dockerfile not found in repository"
         }
-        config.dockerfilePath = dockerfilePath   // 🔥 확정 저장
+        config.dockerfilePath = dockerfilePath
 
+        // Dockerfile 디렉토리를 workdir로 지정
+        def dockerfileDir = steps.sh(
+            script: "dirname ${dockerfilePath}",
+            returnStdout: true
+        ).trim()
+        config.workdir = dockerfileDir
 
-        // Commit info with fallback
+        // 🔍 buildMode 자동 탐지
+        def buildMode = ""
+        if (steps.fileExists("${dockerfileDir}/pom.xml")) {
+            buildMode = "maven"
+        } else if (steps.fileExists("${dockerfileDir}/build.gradle") || steps.fileExists("${dockerfileDir}/build.gradle.kts")) {
+            buildMode = "gradle"
+        } else if (steps.fileExists("${dockerfileDir}/package.json")) {
+            buildMode = "front"
+        } else if (steps.fileExists("${dockerfileDir}/go.mod")) {
+            buildMode = "go"
+        }
+        config.buildMode = buildMode
+
+        // Commit info
         def fullCommitId = scmInfo.GIT_COMMIT ?: steps.sh(
             returnStdout: true,
             script: "git rev-parse HEAD"
@@ -73,7 +91,6 @@ class Checkout {
 
         steps.writeFile file: 'build_info.txt', text: buildInfo, encoding: 'UTF-8'
 
-        // Registry/project 고정
         def registryBase = "nexus.okestro-k8s.com"
         def project      = "maestro"
 
@@ -95,7 +112,10 @@ class Checkout {
             buildInfo  : buildInfo,
             today      : today,
             pushImage  : pushImage,
-            pullImage  : pullImage
+            pullImage  : pullImage,
+            workdir    : dockerfileDir,
+            dockerfilePath: dockerfilePath,
+            buildMode  : buildMode
         ]
     }
 }
