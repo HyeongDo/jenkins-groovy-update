@@ -24,7 +24,8 @@ class Checkout {
                     trackingSubmodules: true
                 ),
                 [$class: 'WipeWorkspace'],
-                [$class: 'CleanBeforeCheckout']
+                [$class: 'CleanBeforeCheckout'],
+                [$class: 'CloneOption', shallow: true, depth: 1]
             ],
             userRemoteConfigs: [[
                 credentialsId: 'jenkins-test',
