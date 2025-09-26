@@ -6,71 +6,42 @@ class Builder {
     Builder(steps) { this.steps = steps }
 
     def run(Map config) {
-        // Checkout first
-        def checkoutInfo = new ci.Checkout(steps).run(config)
-
-        def repo     = checkoutInfo.repo
-        def branch   = checkoutInfo.branch
-        def pushImage= checkoutInfo.pushImage
-
-        def workdir = config.workdir ?: '.'
-        def dockerfilePath = config.dockerfilePath ?: "${workdir}/Dockerfile"
+        def repo      = config.repo
+        def branch    = config.branch
+        def pushImage = config.pushImage
+        def workdir   = config.workdir
+        def dockerfilePath = config.dockerfilePath
 
         if (!steps.fileExists(dockerfilePath)) {
-            dockerfilePath = steps.sh(
-                script: "find ${workdir} -maxdepth 2 -type f -iname 'Dockerfile' | head -n 1",
-                returnStdout: true
-            ).trim()
-            if (!dockerfilePath) {
-                steps.error "Dockerfile not found in ${workdir} or subdirectories"
-            }
+            steps.error "[Builder] Dockerfile not found: ${dockerfilePath}"
         }
-        config.dockerfilePath = dockerfilePath   // 여기서 확정
 
-
+        // Build decision (로그용, 실행 자체는 Stages.build에서 이미 함)
         def buildDetector = new BuildDetector(steps)
         def ciDecision    = buildDetector.detectBuild(dockerfilePath)
-        def buildMode     = config.buildMode ?: buildDetector.detectBuildMode(dockerfilePath)
+        steps.echo "[Builder] Build decision from Dockerfile: ${ciDecision}"
 
-        switch (ciDecision) {
-            case CIDecision.CI_REQUIRED:
-                steps.echo "[Builder] External CI build required, mode=${buildMode}"
-                if (buildMode == "gradle") {
-                    steps.sh "cd ${workdir} && ./gradlew clean build -x test"
-                } else if (buildMode == "maven") {
-                    steps.sh "cd ${workdir} && mvn clean package -Dmaven.test.skip=true"
-                } else if (buildMode == "go") {
-                    steps.sh "cd ${workdir} && go build ./..."
-                } else if (buildMode == "front") {
-                    steps.sh "cd ${workdir} && yarn install && yarn build"
-                }
-                break
-            case CIDecision.BUILT_IN:
-                steps.echo "[Builder] Build handled inside Dockerfile → skip external build"
-                break
-            case CIDecision.NONE:
-                steps.echo "[Builder] No build needed"
-                break
-        }
-
-        // SSH key 여부 확인 (필요할 경우만 추가가)
+        // SSH key 필요 여부 확인
         def sshArgs = ""
         if (buildDetector.requiresSshKey(dockerfilePath)) {
             def keyFile = '/var/lib/jenkins/id_rsa'
+            if (!new File(keyFile).exists()) {
+                steps.error "[Builder] SSH key file not found: ${keyFile}"
+            }
             def rawKey  = new File(keyFile).text.trim()
             def escKey  = rawKey.replace("'", "'\"'\"'")
             sshArgs = "--build-arg SSH_PRIVATE_KEY='${escKey}'"
-            steps.echo "[Builder] SSH key required for docker build"
+            steps.echo "[Builder] SSH key injected into docker build"
         }
 
-        // Docker build 실행
+        // Docker build & push
         steps.sh """
             cd ${workdir}
             docker build --force-rm --no-cache \
-                        --build-arg BUILD_ENV=${branch} \
-                        ${sshArgs} \
-                        -t ${pushImage} \
-                        -f ${dockerfilePath} .
+                --build-arg BUILD_ENV=${branch} \
+                ${sshArgs} \
+                -t ${pushImage} \
+                -f ${dockerfilePath} .
             docker push ${pushImage}
         """.stripIndent()
     }

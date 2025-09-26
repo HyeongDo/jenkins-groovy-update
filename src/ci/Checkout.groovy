@@ -1,4 +1,5 @@
 package ci
+import ci.BuildDetector
 
 class Checkout {
     def steps
@@ -41,14 +42,14 @@ class Checkout {
         }
         config.dockerfilePath = dockerfilePath
 
-        // Dockerfile 디렉토리를 workdir로 지정
+        // Dockerfile 디렉토리를 workdir 로 지정
         def dockerfileDir = steps.sh(
             script: "dirname ${dockerfilePath}",
             returnStdout: true
         ).trim()
         config.workdir = dockerfileDir
 
-        // 🔍 buildMode 자동 탐지
+        // 1차: repo 실제 파일 기반 buildMode 탐지
         def buildMode = ""
         if (steps.fileExists("${dockerfileDir}/pom.xml")) {
             buildMode = "maven"
@@ -59,6 +60,14 @@ class Checkout {
         } else if (steps.fileExists("${dockerfileDir}/go.mod")) {
             buildMode = "go"
         }
+
+        // 2차: fallback → Dockerfile 내용 기반 추측
+        if (!buildMode) {
+            def detector = new BuildDetector(steps)
+            buildMode = detector.detectBuildMode(dockerfilePath)
+            steps.echo "[Checkout] buildMode fallback from Dockerfile: ${buildMode}"
+        }
+
         config.buildMode = buildMode
 
         // Commit info
