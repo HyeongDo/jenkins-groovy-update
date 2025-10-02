@@ -55,7 +55,7 @@ class Builder {
                 echo ${DOCKERHUB_PASS} | docker login -u bright93 --password-stdin
                 docker push bright93/okestro-${repo}:${branch}
             """.stripIndent()
-        })
+        }
 
     }
 }
