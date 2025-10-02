@@ -35,14 +35,27 @@ class Builder {
         }
 
         // Docker build & push
-        steps.sh """
-            cd ${workdir}
-            docker build --force-rm --no-cache \
-                --build-arg BUILD_ENV=${branch} \
-                ${sshArgs} \
-                -t ${pushImage} \
-                -f \$(basename ${dockerfilePath}) .
-            docker push ${pushImage}
-        """.stripIndent()
+        // steps.sh """
+        //     cd ${workdir}
+        //     docker build --force-rm --no-cache \
+        //         --build-arg BUILD_ENV=${branch} \
+        //         ${sshArgs} \
+        //         -t ${pushImage} \
+        //         -f \$(basename ${dockerfilePath}) .
+        //     docker push ${pushImage}
+        // """.stripIndent()
+
+        withCredentials([string(credentialsId: 'DOCKERHUB_PASS', variable: 'DOCKERHUB_PASS')]) {
+            steps.sh """
+                cd ${workdir}
+                docker build --force-rm --no-cache \
+                    --build-arg BUILD_ENV=${branch} \
+                    -t bright93/okestro-${repo}:${branch} \
+                    -f \$(basename ${dockerfilePath}) .
+                echo ${DOCKERHUB_PASS} | docker login -u bright93 --password-stdin
+                docker push bright93/okestro-${repo}:${branch}
+            """.stripIndent()
+        })
+
     }
 }
