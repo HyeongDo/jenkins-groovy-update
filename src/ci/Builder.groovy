@@ -45,7 +45,7 @@ class Builder {
         //     docker push ${pushImage}
         // """.stripIndent()
 
-        withCredentials([string(credentialsId: 'DOCKERHUB_PASS', variable: 'DOCKERHUB_PASS']) {
+        withCredentials([string(credentialsId: 'DOCKERHUB_PASS', variable: 'DOCKERHUB_PASS')]) {
             steps.sh """
                 cd ${workdir}
                 docker build --force-rm --no-cache \
