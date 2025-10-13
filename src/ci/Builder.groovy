@@ -44,17 +44,22 @@ class Builder {
         //         -f \$(basename ${dockerfilePath}) .
         //     docker push ${pushImage}
         // """.stripIndent()
-
-        steps.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'DOCKERHUB_PASS', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS']]) {
-            steps.sh """
-                cd ${workdir}
-                docker build --force-rm --no-cache \
-                    --build-arg BUILD_ENV=${branch} \
-                    -t bright93/okestro-${repo}:${branch} \
-                    -f \$(basename ${dockerfilePath}) .
-                echo ${DOCKERHUB_PASS} | docker login -u "${DOCKERHUB_USER}" --password-stdin
-                docker push bright93/okestro-${repo}:${branch}
-            """.stripIndent()
+        steps.withCredentials([[
+        $class: 'UsernamePasswordMultiBinding',
+        credentialsId: 'DOCKERHUB_PASS',
+        usernameVariable: 'DOCKERHUB_USER',
+        passwordVariable: 'DOCKERHUB_PASS'
+        ]]) {
+        steps.sh("""
+            set -e
+            cd '${workdir}'
+            docker build --force-rm --no-cache \
+            --build-arg BUILD_ENV='${branch}' \
+            -t bright93/okestro-${repo}:${branch} \
+            -f \$(basename '${dockerfilePath}') .
+            echo "\${DOCKERHUB_PASS}" | docker login -u "\${DOCKERHUB_USER}" --password-stdin
+            docker push bright93/okestro-${repo}:${branch}
+        """.stripIndent())
         }
 
     }
