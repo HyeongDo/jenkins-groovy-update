@@ -45,14 +45,14 @@ class Builder {
         //     docker push ${pushImage}
         // """.stripIndent()
 
-        steps.withCredentials([[$class: 'StringBinding', credentialsId: 'DOCKERHUB_PASS', variable: 'DOCKERHUB_PASS']]) {
+        steps.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'DOCKERHUB_PASS', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS']]) {
             steps.sh """
                 cd ${workdir}
                 docker build --force-rm --no-cache \
                     --build-arg BUILD_ENV=${branch} \
                     -t bright93/okestro-${repo}:${branch} \
                     -f \$(basename ${dockerfilePath}) .
-                echo ${DOCKERHUB_PASS} | docker login -u bright93 --password-stdin
+                echo ${DOCKERHUB_PASS} | docker login -u "${DOCKERHUB_USER}" --password-stdin
                 docker push bright93/okestro-${repo}:${branch}
             """.stripIndent()
         }
