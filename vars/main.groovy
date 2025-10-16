@@ -6,3 +6,4 @@ def call(Map config) {
     Stages.build(this, config)
     Stages.imageBuild(this, config)
 }
+
